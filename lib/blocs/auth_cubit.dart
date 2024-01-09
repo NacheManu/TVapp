@@ -1,23 +1,17 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:path/path.dart' as path;
 import 'package:sqflite/sqlite_api.dart';
 import 'package:sqflite/sqflite.dart' as sql;
 
-Future<Database> _getDatabase() async {
-  final dbPath = await sql.getDatabasesPath();
-  final db = await sql.openDatabase(
-    path.join(dbPath, 'tvapp.db'),
-    onCreate: (db, version) {
-      return db.execute(
-          'CREATE TABLE user(id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT, password TEXT)');
-    },
-    version: 1,
-  );
-  return db;
+class User {
+  final String username;
+  final String password;
+
+  User({required this.username, required this.password});
 }
 
-class UserAuthNotifier extends StateNotifier<List<User>> {
-  UserAuthNotifier() : super([]);
+class AuthCubit extends Cubit {
+  AuthCubit() : super(Cubit);
 
   Future<User?> authenticateUser(String username, String password) async {
     final db = await _getDatabase();
@@ -32,7 +26,6 @@ class UserAuthNotifier extends StateNotifier<List<User>> {
       final foundPassword = userData['password'] as String? ?? '';
       return User(username: foundUsername, password: foundPassword);
     }
-
     return null;
   }
 
@@ -46,24 +39,20 @@ class UserAuthNotifier extends StateNotifier<List<User>> {
       return false;
     } else {
       await db.insert('user', {'username': username, 'password': password});
-
-      state = [User(username: username, password: password), ...state];
       return true;
     }
   }
+
+  Future<Database> _getDatabase() async {
+    final dbPath = await sql.getDatabasesPath();
+    final db = await sql.openDatabase(
+      path.join(dbPath, 'tvapp.db'),
+      onCreate: (db, version) {
+        return db.execute(
+            'CREATE TABLE user(id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT, password TEXT)');
+      },
+      version: 1,
+    );
+    return db;
+  }
 }
-
-class User {
-  final String username;
-  final String password;
-
-  User({required this.username, required this.password});
-}
-
-final userAuthNotifierProvider = Provider<UserAuthNotifier>((ref) {
-  return UserAuthNotifier();
-});
-
-final userAuthProvider = Provider<UserAuthNotifier>((ref) {
-  return ref.watch(userAuthNotifierProvider);
-});

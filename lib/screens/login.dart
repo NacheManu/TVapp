@@ -1,19 +1,19 @@
-import 'package:tv_app/provider/database_provider.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:tv_app/blocs/auth_cubit.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:tv_app/screens/home.dart';
 
-class LoginScreen extends ConsumerStatefulWidget {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  ConsumerState<LoginScreen> createState() {
+  State<LoginScreen> createState() {
     return _LoginScreenState();
   }
 }
 
-class _LoginScreenState extends ConsumerState<LoginScreen> {
+class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _pinController = TextEditingController();
   final _form = GlobalKey<FormState>();
   late String _enteredUsername = '';
@@ -27,7 +27,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     super.dispose();
   }
 
-  Future<void> _submit(UserAuthNotifier userAuthNotifier) async {
+  Future<void> _submit(AuthCubit authCubit) async {
     final isValid = _form.currentState!.validate();
 
     if (!isValid || _isAuthenticating) {
@@ -41,15 +41,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     });
 
     if (_isLogin) {
-      final user = await userAuthNotifier.authenticateUser(
+      final user = await authCubit.authenticateUser(
         _enteredUsername,
         _enteredPin,
       );
 
       if (user != null) {
-        Navigator.of(context).push(MaterialPageRoute(
-          builder: (context) => HomeScreen(userId: _enteredUsername),
-        ));
+        context.go('/Home/$_enteredUsername');
       } else {
         ScaffoldMessenger.of(context).clearSnackBars();
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
@@ -59,7 +57,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         ));
       }
     } else {
-      final added = await userAuthNotifier.addUser(
+      final added = await authCubit.addUser(
         _enteredUsername,
         _enteredPin,
       );
@@ -115,7 +113,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         TextFormField(
                           style: const TextStyle(color: Colors.black),
                           decoration:
-                              const InputDecoration(labelText: 'Username'),
+                              InputDecoration(labelText: _isLogin ? 'Username ' : 'Create Username'),
                           enableSuggestions: false,
                           validator: (value) {
                             if (value == null ||
@@ -139,11 +137,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             FilteringTextInputFormatter.allow(RegExp(r'[0-9]')),
                             LengthLimitingTextInputFormatter(5),
                           ],
-                          decoration: const InputDecoration(
-                            labelText: 'PIN',
-                            border: UnderlineInputBorder(
+                          decoration:  InputDecoration(
+                            labelText: _isLogin ? 'PIN ' : 'Create PIN',
+                            border: const UnderlineInputBorder(
                                 borderSide: BorderSide(width: 0.5)),
-                            focusedBorder: UnderlineInputBorder(
+                            focusedBorder: const UnderlineInputBorder(
                               borderSide: BorderSide(width: 1),
                             ),
                           ),
@@ -172,9 +170,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         if (!_isAuthenticating)
                           ElevatedButton(
                             onPressed: () {
-                              final userAuthNotifier =
-                                  ref.read(userAuthNotifierProvider);
-                              _submit(userAuthNotifier);
+                              final authCubit = context.read<AuthCubit>();
+                              _submit(authCubit);
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Theme.of(context)

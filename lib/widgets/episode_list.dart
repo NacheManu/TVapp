@@ -1,24 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:tv_app/models/show.dart';
 import 'package:tv_app/screens/episode_detail.dart';
 
 class ListViewBuilderEpisodes extends StatelessWidget {
  const ListViewBuilderEpisodes({super.key, required this.episodes});
 
-  final List<dynamic> episodes;
+  final List<Episode>? episodes;
 
   @override
   Widget build(BuildContext context) {
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemCount: episodes.length,
+      itemCount: episodes?.length ?? 0,
       itemBuilder: (context, index) {
-        final currentEpisode = episodes[index];
-        final currentSeason = currentEpisode['season'];
-        final currentEpisodeNumber = currentEpisode['number'];
+        final currentEpisode = episodes![index];
+        final currentSeason = currentEpisode.season;
+        final currentEpisodeNumber = currentEpisode.number;
         String seasonText = '';
 
-        if (index == 0 || currentSeason != episodes[index - 1]['season']) {
+         if (index == 0 || currentSeason != episodes![index - 1].season) {
           seasonText = 'Season $currentSeason';
         }
 
@@ -38,7 +39,7 @@ class ListViewBuilderEpisodes extends StatelessWidget {
               ),
             ListTile(
               title: Text(
-                currentEpisode['name'],
+                currentEpisode.name,
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.secondary,
                 ),
@@ -55,7 +56,7 @@ class ListViewBuilderEpisodes extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                     builder: (context) => EpisodeDetail(
-                      episodeId: currentEpisode['id'],
+                      episodeId: currentEpisode.id,
                     ),
                   ),
                 );

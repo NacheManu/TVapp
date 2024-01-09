@@ -1,8 +1,8 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tv_app/provider/favorite_provider.dart';
-import 'package:tv_app/screens/show_screen.dart';
 import 'package:tv_app/widgets/shows_list.dart';
+import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'dart:convert';
@@ -91,7 +91,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             color: Colors.white,
           ),
           onPressed: () {
-            Navigator.of(context).pop();
+            context.go('/');
           },
         ),
         title: _selectedPageIndex == 0
@@ -178,7 +178,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           var imageUrl = show['image'] != null
                               ? show['image']['medium']
                               : 'https://via.placeholder.com/150';
-
                           return ListTile(
                             leading: CachedNetworkImage(
                               imageUrl: imageUrl,
@@ -192,13 +191,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               style: const TextStyle(color: Colors.white),
                             ),
                             onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      ShowDetailsScreen(showName: show['id'], userId: widget.userId),
-                                ),
-                              );
+                              context.go('/Home/Show/${show['id']}/${widget.userId}');
                             },
                           );
                         },
@@ -266,13 +259,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             style: const TextStyle(color: Colors.white),
                           ),
                           onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    ShowDetailsScreen(showName: show['id'], userId: widget.userId,),
-                              ),
-                            );
+                            context.go('/Home/Show/${show['id']}/${widget.userId}');
                           },
                         ),
                       );

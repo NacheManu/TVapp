@@ -1,7 +1,9 @@
-import 'package:tv_app/screens/show_screen.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+
+import 'package:tv_app/models/show.dart';
 
 
 class ListShows extends StatefulWidget {
@@ -15,26 +17,34 @@ class ListShows extends StatefulWidget {
 }
 
 class _ListShowsState extends State<ListShows> {
+  late Future<List<Show>> _showsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _showsFuture = fetchShows(0);
+  }
+
+  Future<List<Show>> fetchShows(int page) async {
+    final String baseUrl = 'https://api.tvmaze.com/shows';
+    var response = await http.get(Uri.parse('$baseUrl?page=$page'));
+
+    if (response.statusCode == 200) {
+      List<dynamic> parsedJson = json.decode(response.body);
+      List<Show> shows = parsedJson.map((json) => Show.fromJson(json)).toList();
+      return shows;
+    } else {
+      throw Exception('Failed to load shows');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    const String baseUrl = 'https://api.tvmaze.com/shows';
-    int currentPage = 0;
-
-    Future<List<dynamic>> fetchShows(int page) async {
-      var response = await http.get(Uri.parse('$baseUrl?page=$page'));
-
-      if (response.statusCode == 200) {
-        return json.decode(response.body);
-      } else {
-        throw Exception('Failed to load shows');
-      }
-    }
-
     return Column(
       children: [
         Expanded(
-          child: FutureBuilder<List<dynamic>>(
-            future: fetchShows(currentPage),
+          child: FutureBuilder<List<Show>>(
+            future: _showsFuture,
             builder: (context, snapshot) {
               if (snapshot.hasData) {
                 return Scrollbar(
@@ -45,25 +55,17 @@ class _ListShowsState extends State<ListShows> {
                       var show = snapshot.data![index];
                       return ListTile(
                         leading: Image.network(
-                          show['image'] != null ? show['image']['medium'] : '',
+                          show.image != null ? show.image!.medium : '',
                           width: 50,
                           height: 50,
                           fit: BoxFit.cover,
                         ),
                         title: Text(
-                          show['name'],
-                          style: Theme.of(context).textTheme.titleMedium,
+                          show.name,
+                          style: Theme.of(context).textTheme.subtitle1,
                         ),
                         onTap: () {
-                          {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    ShowDetailsScreen(showName: show['id'], userId: widget.userId),
-                              ),
-                            );
-                          }
+                          context.go('/Home/Show/${show.id}/${widget.userId}');
                         },
                       );
                     },
@@ -73,7 +75,7 @@ class _ListShowsState extends State<ListShows> {
                 return Center(
                   child: Text(
                     'Error al cargar los datos',
-                    style: Theme.of(context).textTheme.bodyLarge,
+                    style: Theme.of(context).textTheme.bodyText1,
                   ),
                 );
               }
